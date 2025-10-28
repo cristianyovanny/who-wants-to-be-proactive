@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¿Quién quiere ser Proactivo?</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+
+        <div id="startScreen" class="screen active">
+            <h1>¿QUIÉN QUIERE SER PROACTIVO?</h1>
+            <div class="player-input-container">
+                <input type="text" id="playerNameInput" placeholder="Escribe tu nombre para empezar" required>
+            </div>
+            <button id="startButton" class="btn primary-btn">Empezar!</button>
+        </div>
+
+        <div id="questionSelectionScreen" class="screen">
+            <h2>¿LISTOS PARA JUGAR?</h2>
+            <div id="questionButtonsContainer" class="grid-buttons">
+                </div>
+        </div>
+
+        <div id="questionScreen" class="screen">
+            <h2 id="questionScreenTitle">¿Quién quiere ser Proactivo?</h2>
+            <div class="question-info">
+                <div id="currentQuestionNumber" class="question-display-box">PREGUNTA 1</div>
+                <div id="currentQuestionPoints" class="points-display-box">10</div>
+            </div>
+            <button id="goButton" class="btn primary-btn">¡VAMOS!</button>
+
+            <div id="quizContent" class="quiz-content hidden">
+                <div id="questionText" class="question-text-box">¿Cuál es el primer número par?</div>
+                <div class="answers-grid">
+                    <button class="answer-btn" data-answer="A">A <span class="answer-text">4</span></button>
+                    <button class="answer-btn" data-answer="B">B <span class="answer-text">3</span></button>
+                    <button class="answer-btn" data-answer="C">C <span class="answer-text">2</span></button>
+                    <button class="answer-btn" data-answer="D">D <span class="answer-text">1</span></button>
+                </div>
+                <button id="nextQuestionButton" class="btn primary-btn hidden">Siguiente</button>
+            </div>
+        </div>
+
+        <div id="resultScreen" class="screen">
+            <div class="result-circle">
+                <h1>¡Juego Terminado!</h1>
+                <div id="finalScore" class="final-score-box">1,000,000</div>
+            </div>
+
+            <form id="scoreForm" name="scores" method="POST" style="margin-bottom: 20px;" netlify>
+                <input type="hidden" name="form-name" value="scores">
+                
+                <h3 id="resultMessage" style="margin-bottom: 20px;">¡Buen trabajo!</h3>
+
+                <input type="hidden" name="nombre" id="hiddenNameInput">
+                <input type="hidden" name="puntaje" id="hiddenScoreInput">
+
+                <button type="submit" class="btn primary-btn" style="animation: none; margin-bottom: 15px;">Guardar en el Ranking</button>
+            </form>
+            
+            <button id="playAgainButton" class="btn primary-btn">Jugar de nuevo</button>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
