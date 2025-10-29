@@ -218,22 +218,32 @@ document.addEventListener('DOMContentLoaded', () => {
     playAgainButton.addEventListener('click', resetGame);
 
     // --- Netlify Form Submission Handler ---
-    const handleSubmit = event => {
-        event.preventDefault();
+    async function handleScoreSubmit(e) {
+        e.preventDefault(); // ¡Esto EVITA el error 404!
 
-        const myForm = event.target;
-        const formData = new FormData(myForm);
+        const formData = new FormData(scoreForm); // scoreForm debe estar definido arriba
 
-        fetch("/", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams(formData).toString()
-        })
-            .then(() => console.log("Form successfully submitted"))
-            .catch(error => alert(error));
-    };
+        try {
+            // Deshabilitar el botón
+            saveScoreButton.disabled = true;
+            saveScoreButton.textContent = "Guardando...";
 
-    document.getElementById('scoreForm').addEventListener("submit", handleSubmit);
+            await fetch("/", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams(formData).toString()
+            });
+
+            // Éxito:
+            saveScoreButton.textContent = "¡Puntaje Guardado!";
+
+        } catch (error) {
+            console.error("Error al enviar el puntaje:", error);
+            alert("Hubo un error al guardar tu puntaje. Intenta de nuevo.");
+            saveScoreButton.disabled = false;
+            saveScoreButton.textContent = "Guardar en el Ranking";
+        }
+    }
     // --- End Netlify Handler ---
     
     // --- Inicio del Juego ---
