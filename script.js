@@ -217,6 +217,25 @@ document.addEventListener('DOMContentLoaded', () => {
     nextQuestionButton.addEventListener('click', goToNextQuestion);
     playAgainButton.addEventListener('click', resetGame);
 
+    // --- Netlify Form Submission Handler ---
+    const handleSubmit = event => {
+        event.preventDefault();
+
+        const myForm = event.target;
+        const formData = new FormData(myForm);
+
+        fetch("/", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams(formData).toString()
+        })
+            .then(() => console.log("Form successfully submitted"))
+            .catch(error => alert(error));
+    };
+
+    document.getElementById('scoreForm').addEventListener("submit", handleSubmit);
+    // --- End Netlify Handler ---
+    
     // --- Inicio del Juego ---
     loadQuestions(); // Cargar las preguntas al iniciar
 });
