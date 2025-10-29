@@ -49,7 +49,7 @@
                 <div id="finalScore" class="final-score-box">1,000,000</div>
             </div>
 
-            <form id="scoreForm" name="scores" method="POST" data-netlify="true netlify-honeypot="bot-field" style="margin-bottom: 20px;">
+            <form id="scoreForm" name="scores" method="POST" data-netlify="true" netlify-honeypot="bot-field" style="margin-bottom: 20px;">
                 <p class="hidden">
                     <label>
                     Don’t fill this out if you’re human: <input name="bot-field" type="text" />
@@ -58,8 +58,8 @@
                 <input type="hidden" name="form-name" value="scores">
                 
                 <h3 id="resultMessage" style="margin-bottom: 20px;">¡Buen trabajo!</h3>
-                <label type="hidden" name="nombre" id="hiddenNameInput">
-                <label type="hidden" name="puntaje" id="hiddenScoreInput">
+                <input type="hidden" name="nombre" id="hiddenNameInput">
+                <input type="hidden" name="puntaje" id="hiddenScoreInput">
 
                 <button type="submit" class="btn primary-btn" style="animation: none; margin-bottom: 15px;">Guardar en el Ranking</button>
             </form>

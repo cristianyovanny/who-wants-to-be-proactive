@@ -2,8 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Elementos del DOM ---
     const startScreen = document.getElementById('startScreen');
     const startButton = document.getElementById('startButton');
-
-     const playerNameInput = document.getElementById('playerNameInput');
+    const playerNameInput = document.getElementById('playerNameInput'); // <--- AÑADIDO
 
     const questionSelectionScreen = document.getElementById('questionSelectionScreen');
     const questionButtonsContainer = document.getElementById('questionButtonsContainer');
@@ -20,13 +19,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultScreen = document.getElementById('resultScreen');
     const finalScoreDisplay = document.getElementById('finalScore');
     const playAgainButton = document.getElementById('playAgainButton');
+    
+    // --- Elementos del Formulario (AÑADIDOS) ---
+    const scoreForm = document.getElementById('scoreForm'); 
+    const saveScoreButton = document.getElementById('saveScoreButton'); 
+    const resultMessage = document.getElementById('resultMessage'); 
+    const hiddenNameInput = document.getElementById('hiddenNameInput');
+    const hiddenScoreInput = document.getElementById('hiddenScoreInput');
 
     // --- Variables del Juego ---
     let questions = [];
     let currentQuestionIndex = 0;
     let selectedAnswer = null;
     let totalScore = 0;
-    let currentPlayerName = "";
+    let currentPlayerName = ""; // <--- AÑADIDO
 
     // --- Funciones de Navegación entre Pantallas ---
     function showScreen(screenId) {
@@ -49,9 +55,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Generar Botones de Selección de Preguntas (Imagen 1) ---
+    // --- Generar Botones de Selección de Preguntas ---
     function generateQuestionSelectionButtons() {
-        questionButtonsContainer.innerHTML = ''; // Limpiar botones existentes
+        questionButtonsContainer.innerHTML = ''; 
         questions.forEach((q, index) => {
             const button = document.createElement('button');
             button.classList.add('btn', 'question-select-btn');
@@ -59,14 +65,11 @@ document.addEventListener('DOMContentLoaded', () => {
             button.dataset.questionId = q.id;
 
             if (index > currentQuestionIndex) {
-                // Las preguntas futuras son inaccesibles hasta completar las anteriores
                 button.classList.add('unreachable');
                 button.disabled = true;
             } else if (index === currentQuestionIndex) {
-                // Resaltar la pregunta actual
                 button.classList.add('current');
             } else {
-                // Las preguntas ya completadas se marcan como seleccionadas
                 button.classList.add('selected');
                 button.disabled = true;
             }
@@ -82,57 +85,50 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Mostrar Pregunta (Imagen 4) ---
+    // --- Mostrar Pregunta ---
     function showQuestion(questionData) {
-        // Reiniciar estado
         selectedAnswer = null;
-        quizContent.classList.add('hidden'); // Ocultar quiz content inicialmente
-        goButton.classList.remove('hidden'); // Mostrar botón ¡VAMOS!
-        nextQuestionButton.classList.add('hidden'); // Ocultar botón Siguiente
+        quizContent.classList.add('hidden'); 
+        goButton.classList.remove('hidden'); 
+        nextQuestionButton.classList.add('hidden'); 
         answersGrid.querySelectorAll('.answer-btn').forEach(btn => {
             btn.classList.remove('selected-answer', 'correct', 'incorrect');
-            btn.disabled = false; // Habilitar todos los botones de respuesta
+            btn.disabled = false; 
         });
 
         currentQuestionNumberDisplay.textContent = `PREGUNTA ${questionData.id}`;
         currentQuestionPointsDisplay.textContent = questionData.points;
         questionText.textContent = questionData.question;
-        answersGrid.innerHTML = ''; // Limpiar respuestas anteriores
+        answersGrid.innerHTML = ''; 
 
         questionData.options.forEach(option => {
             const button = document.createElement('button');
             button.classList.add('answer-btn');
-            button.dataset.answerValue = option; // Guardar el valor de la opción
+            button.dataset.answerValue = option; 
             button.innerHTML = `<span class="answer-letter">${getOptionLetter(option, questionData.options)}</span> <span class="answer-text">${option}</span>`;
             button.addEventListener('click', () => selectAnswer(button));
             answersGrid.appendChild(button);
         });
     }
 
-    // Helper para obtener la letra de la opción (A, B, C, D)
+    // Helper para obtener la letra
     function getOptionLetter(option, optionsArray) {
         const index = optionsArray.indexOf(option);
-        return String.fromCharCode(65 + index); // 65 es el código ASCII para 'A'
+        return String.fromCharCode(65 + index); // 'A'
     }
 
-    // --- Selección de Respuesta (Imagen 5) ---
+    // --- Selección de Respuesta ---
     function selectAnswer(button) {
-        if (selectedAnswer) return; // Si ya se seleccionó una respuesta, no hacer nada
+        if (selectedAnswer) return; 
 
         selectedAnswer = button.dataset.answerValue;
-        // Quitar la clase 'selected-answer' de cualquier botón previamente seleccionado
         answersGrid.querySelectorAll('.answer-btn').forEach(btn => {
             btn.classList.remove('selected-answer');
         });
         button.classList.add('selected-answer');
-
-        // Deshabilitar todos los botones de respuesta después de una selección
         answersGrid.querySelectorAll('.answer-btn').forEach(btn => btn.disabled = true);
-
-        // Mostrar el botón "Siguiente" inmediatamente después de seleccionar una respuesta
         nextQuestionButton.classList.remove('hidden');
-
-        checkAnswer(button); // Verificar la respuesta
+        checkAnswer(button); 
     }
 
     // --- Verificar Respuesta ---
@@ -141,15 +137,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const isCorrect = (selectedButton.dataset.answerValue === currentQuestion.answer);
 
         if (isCorrect) {
-            selectedButton.classList.remove('selected-answer'); // Quitar color de selección
+            selectedButton.classList.remove('selected-answer'); 
             selectedButton.classList.add('correct');
             totalScore += currentQuestion.points;
-            // Opcional: Animar otras respuestas como incorrectas si se desea mostrar
-            // but for simplicity, we just mark correct.
         } else {
-            selectedButton.classList.remove('selected-answer'); // Quitar color de selección
+            selectedButton.classList.remove('selected-answer'); 
             selectedButton.classList.add('incorrect');
-            // Resaltar la respuesta correcta
             answersGrid.querySelectorAll('.answer-btn').forEach(btn => {
                 if (btn.dataset.answerValue === currentQuestion.answer) {
                     btn.classList.add('correct');
@@ -162,50 +155,83 @@ document.addEventListener('DOMContentLoaded', () => {
     function goToNextQuestion() {
         currentQuestionIndex++;
         if (currentQuestionIndex < questions.length) {
-            // Si hay más preguntas, ir a la pantalla de selección de preguntas
-            generateQuestionSelectionButtons(); // Regenerar botones con el estado actualizado
+            generateQuestionSelectionButtons(); 
             showScreen('questionSelectionScreen');
         } else {
-            // Si no hay más preguntas, mostrar pantalla de resultado
+            // --- MODIFICADO PARA PASAR DATOS AL FORMULARIO ---
             finalScoreDisplay.textContent = totalScore.toLocaleString(); 
             
-            // --- LÍNEAS MODIFICADAS ---
-            document.getElementById('hiddenScoreInput').value = totalScore;
-            document.getElementById('hiddenNameInput').value = currentPlayerName;
+            // Poner los datos en los campos ocultos
+            hiddenScoreInput.value = totalScore;
+            hiddenNameInput.value = currentPlayerName;
             
-            // Mensaje personalizado en la pantalla de resultados
-            const resultMessage = document.getElementById('resultMessage');
+            // Mensaje personalizado
             resultMessage.textContent = `¡Buen trabajo, ${currentPlayerName}!`;
-            // --------------------------
-
+            
             showScreen('resultScreen');
-
         }
     }
 
-    // --- Reiniciar Juego ---
+    // --- Reiniciar Juego (MODIFICADO) ---
     function resetGame() {
-        document.getElementById('scoreForm').reset();
         currentQuestionIndex = 0;
         totalScore = 0;
         selectedAnswer = null;
-        currentPlayerName = ""; // Limpia la variable
-        document.getElementById('playerNameInput').value = ""; 
+        
+        // --- AÑADIDO PARA REINICIAR FORMULARIO Y JUGADOR ---
+        currentPlayerName = ""; 
+        playerNameInput.value = ""; 
+        scoreForm.reset(); 
+        saveScoreButton.disabled = false; // Habilitar el botón de guardar
+        saveScoreButton.textContent = "Guardar en el Ranking";
+        // --------------------------------------------------
+        
         loadQuestions(); 
         showScreen('startScreen');
     }
 
-    // --- Event Listeners ---
+    // --- Netlify Form Submission Handler (TU CÓDIGO MEJORADO) ---
+    const handleSubmit = (event) => {
+        event.preventDefault(); // ¡Evita la recarga y el error 404!
+
+        const myForm = event.target;
+        const formData = new FormData(myForm);
+
+        // Deshabilitar el botón para evitar envíos duplicados
+        saveScoreButton.disabled = true;
+        saveScoreButton.textContent = "Guardando...";
+
+        fetch("/", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams(formData).toString()
+        })
+        .then(() => {
+            console.log("Formulario enviado con éxito");
+            saveScoreButton.textContent = "¡Puntaje Guardado!";
+            // El botón se queda deshabilitado hasta que jueguen de nuevo
+        })
+        .catch((error) => {
+            alert("Hubo un error al guardar tu puntaje. Intenta de nuevo.");
+            console.error(error);
+            saveScoreButton.disabled = false; // Habilitar de nuevo si falló
+            saveScoreButton.textContent = "Guardar en el Ranking";
+        });
+    };
+    // --- Fin del Netlify Handler ---
+
+
+    // --- Event Listeners (MODIFICADOS) ---
+    
+    // MODIFICADO para capturar el nombre
     startButton.addEventListener('click', () => {
         currentPlayerName = playerNameInput.value.trim(); // Obtener el nombre
         
         if (currentPlayerName === "") {
-            // Validación simple
             alert("Por favor, escribe tu nombre para empezar.");
             playerNameInput.focus();
         } else {
-            // Si el nombre es válido, continuamos
-        showScreen('questionSelectionScreen');
+            showScreen('questionSelectionScreen');
         }
     });
 
@@ -216,36 +242,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     nextQuestionButton.addEventListener('click', goToNextQuestion);
     playAgainButton.addEventListener('click', resetGame);
-
-    // --- Netlify Form Submission Handler ---
-    async function handleScoreSubmit(e) {
-        e.preventDefault(); // ¡Esto EVITA el error 404!
-
-        const formData = new FormData(scoreForm); // scoreForm debe estar definido arriba
-
-        try {
-            // Deshabilitar el botón
-            saveScoreButton.disabled = true;
-            saveScoreButton.textContent = "Guardando...";
-
-            await fetch("/", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: new URLSearchParams(formData).toString()
-            });
-
-            // Éxito:
-            saveScoreButton.textContent = "¡Puntaje Guardado!";
-
-        } catch (error) {
-            console.error("Error al enviar el puntaje:", error);
-            alert("Hubo un error al guardar tu puntaje. Intenta de nuevo.");
-            saveScoreButton.disabled = false;
-            saveScoreButton.textContent = "Guardar en el Ranking";
-        }
-    }
-    // --- End Netlify Handler ---
     
+    // --- AÑADIDO: Event listener para el formulario ---
+    scoreForm.addEventListener("submit", handleSubmit);
+
     // --- Inicio del Juego ---
-    loadQuestions(); // Cargar las preguntas al iniciar
+    loadQuestions(); // Cargar las preguntas al iniciar
 });
