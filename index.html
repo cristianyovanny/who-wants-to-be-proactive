@@ -49,7 +49,12 @@
                 <div id="finalScore" class="final-score-box">1,000,000</div>
             </div>
 
-            <form id="scoreForm" name="scores" method="POST" style="margin-bottom: 20px;" netlify>
+            <form id="scoreForm" name="scores" method="POST" netlify-honeypot="bot-field" style="margin-bottom: 20px;" netlify>
+                <p class="hidden">
+                    <label>
+                    Don’t fill this out if you’re human: <input name="bot-field" type="text" />
+                    </label>
+                </p>
                 <input type="hidden" name="form-name" value="scores">
                 
                 <h3 id="resultMessage" style="margin-bottom: 20px;">¡Buen trabajo!</h3>
