@@ -1,4 +1,87 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- FUNCIONES DE SANITIZACIÓN Y SEGURIDAD ---
+    
+    /**
+     * Sanitiza texto para prevenir XSS eliminando caracteres HTML peligrosos
+     * @param {string} text - Texto a sanitizar
+     * @returns {string} - Texto sanitizado
+     */
+    function sanitizeHTML(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    /**
+     * Valida el nombre del jugador
+     * @param {string} name - Nombre a validar
+     * @returns {object} - {isValid: boolean, sanitized: string, error: string}
+     */
+    function validatePlayerName(name) {
+        const trimmed = name.trim();
+        
+        // Validar longitud
+        if (trimmed.length === 0) {
+            return { isValid: false, sanitized: '', error: 'El nombre no puede estar vacío.' };
+        }
+        if (trimmed.length > 50) {
+            return { isValid: false, sanitized: '', error: 'El nombre no puede tener más de 50 caracteres.' };
+        }
+        
+        // Permitir solo letras, números, espacios y algunos caracteres especiales seguros
+        const safePattern = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s\-_.]+$/;
+        if (!safePattern.test(trimmed)) {
+            return { isValid: false, sanitized: '', error: 'El nombre contiene caracteres no permitidos.' };
+        }
+        
+        // Sanitizar el nombre
+        const sanitized = sanitizeHTML(trimmed);
+        return { isValid: true, sanitized, error: '' };
+    }
+    
+    /**
+     * Valida la estructura de una pregunta del JSON
+     * @param {object} question - Objeto pregunta a validar
+     * @returns {boolean} - true si es válida
+     */
+    function validateQuestion(question) {
+        if (!question || typeof question !== 'object') return false;
+        
+        // Validar campos requeridos
+        if (typeof question.id !== 'number' || question.id < 1) return false;
+        if (typeof question.question !== 'string' || question.question.trim() === '') return false;
+        if (typeof question.answer !== 'string' || question.answer.trim() === '') return false;
+        if (typeof question.points !== 'number' || question.points < 0) return false;
+        
+        // Validar opciones
+        if (!Array.isArray(question.options) || question.options.length !== 4) return false;
+        
+        // Validar que todas las opciones sean strings no vacíos
+        for (const option of question.options) {
+            if (typeof option !== 'string' || option.trim() === '') return false;
+        }
+        
+        // Validar que la respuesta esté en las opciones
+        if (!question.options.includes(question.answer)) return false;
+        
+        return true;
+    }
+    
+    /**
+     * Sanitiza el contenido de una pregunta
+     * @param {object} question - Pregunta a sanitizar
+     * @returns {object} - Pregunta sanitizada
+     */
+    function sanitizeQuestion(question) {
+        return {
+            id: question.id,
+            question: sanitizeHTML(question.question),
+            options: question.options.map(opt => sanitizeHTML(opt)),
+            answer: sanitizeHTML(question.answer),
+            points: question.points
+        };
+    }
+    
     // --- Elementos del DOM ---
     const startScreen = document.getElementById('startScreen');
     const startButton = document.getElementById('startButton');
@@ -46,12 +129,33 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadQuestions() {
         try {
             const response = await fetch('questions.json');
-            questions = await response.json();
-            console.log('Preguntas cargadas:', questions);
+            const rawQuestions = await response.json();
+            
+            // Validar que sea un array
+            if (!Array.isArray(rawQuestions)) {
+                throw new Error('El formato del archivo de preguntas es inválido.');
+            }
+            
+            // Validar y sanitizar cada pregunta
+            questions = [];
+            for (const question of rawQuestions) {
+                if (validateQuestion(question)) {
+                    questions.push(sanitizeQuestion(question));
+                } else {
+                    console.warn('Pregunta inválida detectada y omitida:', question);
+                }
+            }
+            
+            // Verificar que haya al menos una pregunta válida
+            if (questions.length === 0) {
+                throw new Error('No se encontraron preguntas válidas en el archivo.');
+            }
+            
+            console.log(`${questions.length} preguntas válidas cargadas y sanitizadas`);
             generateQuestionSelectionButtons();
         } catch (error) {
             console.error('Error al cargar las preguntas:', error);
-            alert('No se pudieron cargar las preguntas del juego.');
+            alert('No se pudieron cargar las preguntas del juego. Por favor, verifica el archivo questions.json');
         }
     }
 
@@ -88,24 +192,36 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Mostrar Pregunta ---
     function showQuestion(questionData) {
         selectedAnswer = null;
-        quizContent.classList.add('hidden'); 
-        goButton.classList.remove('hidden'); 
-        nextQuestionButton.classList.add('hidden'); 
+        quizContent.classList.add('hidden');
+        goButton.classList.remove('hidden');
+        nextQuestionButton.classList.add('hidden');
         answersGrid.querySelectorAll('.answer-btn').forEach(btn => {
             btn.classList.remove('selected-answer', 'correct', 'incorrect');
-            btn.disabled = false; 
+            btn.disabled = false;
         });
 
         currentQuestionNumberDisplay.textContent = `PREGUNTA ${questionData.id}`;
         currentQuestionPointsDisplay.textContent = questionData.points;
         questionText.textContent = questionData.question;
-        answersGrid.innerHTML = ''; 
+        answersGrid.innerHTML = '';
 
         questionData.options.forEach(option => {
             const button = document.createElement('button');
             button.classList.add('answer-btn');
-            button.dataset.answerValue = option; 
-            button.innerHTML = `<span class="answer-letter">${getOptionLetter(option, questionData.options)}</span> <span class="answer-text">${option}</span>`;
+            button.dataset.answerValue = option;
+            
+            // Crear elementos de forma segura sin innerHTML
+            const letterSpan = document.createElement('span');
+            letterSpan.classList.add('answer-letter');
+            letterSpan.textContent = getOptionLetter(option, questionData.options);
+            
+            const textSpan = document.createElement('span');
+            textSpan.classList.add('answer-text');
+            textSpan.textContent = option;
+            
+            button.appendChild(letterSpan);
+            button.appendChild(textSpan);
+            
             button.addEventListener('click', () => selectAnswer(button));
             answersGrid.appendChild(button);
         });
@@ -155,18 +271,22 @@ document.addEventListener('DOMContentLoaded', () => {
     function goToNextQuestion() {
         currentQuestionIndex++;
         if (currentQuestionIndex < questions.length) {
-            generateQuestionSelectionButtons(); 
+            generateQuestionSelectionButtons();
             showScreen('questionSelectionScreen');
         } else {
-            // --- MODIFICADO PARA PASAR DATOS AL FORMULARIO ---
-            finalScoreDisplay.textContent = totalScore.toLocaleString(); 
+            // --- MODIFICADO PARA PASAR DATOS SANITIZADOS AL FORMULARIO ---
+            finalScoreDisplay.textContent = totalScore.toLocaleString();
             
-            // Poner los datos en los campos ocultos
-            hiddenScoreInput.value = totalScore;
-            hiddenNameInput.value = currentPlayerName;
+            // Validar y sanitizar antes de asignar
+            const sanitizedScore = Math.max(0, Math.floor(totalScore)); // Asegurar que sea un número positivo entero
+            const sanitizedName = sanitizeHTML(currentPlayerName);
             
-            // Mensaje personalizado
-            resultMessage.textContent = `¡Buen trabajo, ${currentPlayerName}!`;
+            // Poner los datos sanitizados en los campos ocultos
+            hiddenScoreInput.value = sanitizedScore;
+            hiddenNameInput.value = sanitizedName;
+            
+            // Mensaje personalizado usando textContent (seguro contra XSS)
+            resultMessage.textContent = `¡Buen trabajo, ${sanitizedName}!`;
             
             showScreen('resultScreen');
         }
@@ -190,12 +310,34 @@ document.addEventListener('DOMContentLoaded', () => {
         showScreen('startScreen');
     }
 
-    // --- Netlify Form Submission Handler (TU CÓDIGO MEJORADO) ---
+    // --- Netlify Form Submission Handler (MEJORADO CON VALIDACIÓN) ---
     const handleSubmit = (event) => {
         event.preventDefault(); // ¡Evita la recarga y el error 404!
 
         const myForm = event.target;
         const formData = new FormData(myForm);
+        
+        // Validar datos antes de enviar
+        const nombre = formData.get('nombre');
+        const puntaje = formData.get('puntaje');
+        
+        // Validar nombre
+        const nameValidation = validatePlayerName(nombre);
+        if (!nameValidation.isValid) {
+            alert('Error: ' + nameValidation.error);
+            return;
+        }
+        
+        // Validar puntaje
+        const scoreNum = parseInt(puntaje, 10);
+        if (isNaN(scoreNum) || scoreNum < 0) {
+            alert('Error: El puntaje no es válido.');
+            return;
+        }
+        
+        // Actualizar formData con valores sanitizados
+        formData.set('nombre', nameValidation.sanitized);
+        formData.set('puntaje', scoreNum.toString());
 
         // Deshabilitar el botón para evitar envíos duplicados
         saveScoreButton.disabled = true;
@@ -223,15 +365,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Event Listeners (MODIFICADOS) ---
     
-    // MODIFICADO para capturar el nombre
+    // MODIFICADO para capturar y validar el nombre
     startButton.addEventListener('click', () => {
-        currentPlayerName = playerNameInput.value.trim(); // Obtener el nombre
+        const validation = validatePlayerName(playerNameInput.value);
         
-        if (currentPlayerName === "") {
-            alert("Por favor, escribe tu nombre para empezar.");
+        if (!validation.isValid) {
+            alert(validation.error);
             playerNameInput.focus();
+            return;
+        }
+        
+        currentPlayerName = validation.sanitized;
+        showScreen('questionSelectionScreen');
+    });
+    
+    // Validación en tiempo real del nombre del jugador
+    playerNameInput.addEventListener('input', (e) => {
+        const value = e.target.value;
+        const validation = validatePlayerName(value);
+        
+        // Cambiar el borde según la validez
+        if (value.trim() === '') {
+            playerNameInput.style.borderColor = '';
+        } else if (!validation.isValid) {
+            playerNameInput.style.border = '2px solid #DC3545';
+            playerNameInput.title = validation.error;
         } else {
-            showScreen('questionSelectionScreen');
+            playerNameInput.style.border = '2px solid #4CAF50';
+            playerNameInput.title = 'Nombre válido';
         }
     });
 
